@@ -1,0 +1,19 @@
+<RCC>
+	<qresource prefix="/Tratamiento_Imagenes">
+		<file>./images/casa.png</file>
+		<file>./images/casco.png</file>
+		<file>./images/moto.jpg</file>
+		<file>./images/mujer.png</file>
+		<file>./images/mujer1.png</file>
+		<file>./images/berry.png</file>
+		<file>./images/cmd_1.png</file>
+		<file>./images/energy.png</file>
+		<file>./images/home.png</file>
+		<file>./images/circuit.png</file>
+		<file>./images/laptop.png</file>
+		<file>./images/user.png</file>
+		<file>./images/setting.png</file>
+		<file>./images/robot.png</file>
+		<file>./images/money.png</file>
+	</qresource>	
+</RCC>

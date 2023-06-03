@@ -12,6 +12,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import images_rc
+import RPi.GPIO as GPIO
 
 from PyQt5 import QtCore, QtGui, Qt, QtWidgets, uic
 
@@ -41,6 +43,7 @@ class Graficas_Taller_sensor(QtWidgets.QMainWindow):
         self.Graf3.clicked.connect(self.c)
         self.Graf4.clicked.connect(self.d)
         self.Graf.clicked.connect(self.e)
+        self.Led.clicked.connect(self.f)
         
         self.load_data()
     
@@ -97,6 +100,31 @@ class Graficas_Taller_sensor(QtWidgets.QMainWindow):
             ax4.plot(s4,'tab:black')
             ax4.set_ylabel('sensor 4')
             ax4.set_xlabel('Tiempo (s)')
+    def f(self):
+            # Pin assignments
+            LED_PIN = 7
+            BUTTON_PIN = 17
+            # Setup GPIO module and pins
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(LED_PIN, GPIO.OUT)
+            GPIO.setup(BUTTON_PIN, GPIO.IN)
+            # Set LED pin to OFF (no voltage)
+            GPIO.output(LED_PIN, GPIO.LOW)
+            try:
+                # Loop forever
+                while 1:
+                    # Detect voltage on button pin
+                    if GPIO.input(BUTTON_PIN) == 1:
+                        # Turn on the LED
+                        GPIO.output(LED_PIN, GPIO.HIGH)
+                    else:
+                        # Turn off the LED
+                        GPIO.output(LED_PIN, GPIO.LOW)
+            
+            except KeyboardInterrupt:
+                print('Hecho')
+            finally:
+                GPIO.cleanup()            
 
 def main():
     import sys
