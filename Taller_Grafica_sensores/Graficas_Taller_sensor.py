@@ -206,7 +206,7 @@ class Graficas_Taller_sensor(QtWidgets.QMainWindow):
 #########################MOSTRAR DATOS ADQUIRIDOS POR EL SENSOR ##########################
             
             try:
-               print("Welcome to example of reading a remote TMP36 sensor!")
+               print("Welcome to example of reading a remote  sensor!")
                device.open() # Open the device class
                # Setup the remote device
                get_remote_device()
