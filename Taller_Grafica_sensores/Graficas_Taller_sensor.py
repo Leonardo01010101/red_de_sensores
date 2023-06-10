@@ -16,6 +16,14 @@ import images_rc
 import RPi.GPIO as GPIO
 
 from PyQt5 import QtCore, QtGui, Qt, QtWidgets, uic
+from digi.xbee.devices import XBeeDevice
+from digi.xbee.io import IOLine, IOMode
+
+#from __future__ import print_function
+# Python imports
+import http.client
+import time
+import urllib
 
 matplotlib.use("Qt5Agg")
 
@@ -44,7 +52,7 @@ class Graficas_Taller_sensor(QtWidgets.QMainWindow):
         self.Graf4.clicked.connect(self.d)
         self.Graf.clicked.connect(self.e)
         self.Led.clicked.connect(self.f)
-        
+        self.Captura_Datos.clicked.connect(self.g)
         self.load_data()
     
     def load_data(self):
@@ -125,7 +133,91 @@ class Graficas_Taller_sensor(QtWidgets.QMainWindow):
                 print('Hecho')
             finally:
                 GPIO.cleanup()            
-
+    def g(self): 
+            print()  
+ #############################ADQUISICION DE DATOS DEL SENSOR##############################
+            # Serial port on Raspberry Pi
+            SERIAL_PORT = "/dev/ttyUSB0"  # "/dev/ttyS0"
+            # BAUD rate for the XBee module connected to the Raspberry Pi
+            BAUD_RATE = 9600
+            # The name of the remote node (NI)
+            REMOTE_NODE_ID = "SENSOR1"
+            # Analog pin we want to monitor/request data
+            ANALOG_LINE = IOLine.DIO3_AD3
+            # Sampling rate
+            SAMPLING_RATE = 15
+            # Get an instance of the XBee device class
+            device = XBeeDevice(SERIAL_PORT, BAUD_RATE)
+            
+            # Method to connect to the network and get the remote node by id
+            def get_remote_device():
+               """Get the remote node from the network 
+               Returns:
+               """
+               # Request the network class and search the network for the remote node
+               xbee_network = device.get_network()
+               remote_device = xbee_network.discover_device(REMOTE_NODE_ID)
+               if remote_device is None:
+                  print("ERROR: Remote node id {0} not found.".format(REMOTE_NODE_ID))
+                  exit(1)
+               remote_device.set_dest_address(device.get_64bit_addr())
+               remote_device.set_io_configuration(ANALOG_LINE, IOMode.ADC)
+               remote_device.set_io_sampling_rate(SAMPLING_RATE)
+            
+            def io_sample_callback(sample, remote, time):
+               print("Reading from {0} at {1}:".format(REMOTE_NODE_ID, remote.get_64bit_addr()))
+               # Calculate supply voltage
+               volts = (sample.power_supply_value * (1200.0 / 1024.0)) / 1000.0
+               print("\tSupply voltage = {0}v".format(volts))
+ #######################ENVIAR DATO AL SERVIDOR#############################
+            # API KEY
+               THINGSPEAK_APIKEY = 'YQAF62KX12PDTQKB'
+               print("Welcome to the ThingSpeak Raspberry Pi Voltage sensor! Press CTRL+C to stop.")
+               try:
+                  while 1:
+                     # Setup the data to send in a JSON (dictionary)
+                     params = urllib.parse.urlencode(
+                          {
+                             'field1': volts,
+                             'key': THINGSPEAK_APIKEY,
+                          }
+                     )
+                     # Create the header
+                     headers = { "Content-type": "application/x-www-form-urlencoded", 'Accept': "text/plain"}
+                     # Create a connection over HTTP
+                     conn = http.client.HTTPConnection("api.thingspeak.com:80")
+                     try:
+                         # Execute the post (or update) request to upload the data
+                         conn.request("POST", "/update", params, headers)
+                         # Check response from server (200 is success)
+                         response = conn.getresponse()
+                         # Display response (should be 200)
+                         print("Response: {0} {1}".format(response.status,response.reason))
+                         # Read the data for diagnostics
+                         data = response.read()
+                         conn.close()
+                     except Exception as err:
+                         print("WARNING: ThingSpeak connection failed: {0}, " "data: {1}".format(err, data))
+                     # Sleep for 20 seconds
+                     time.sleep(20)
+               except KeyboardInterrupt:
+                     print("Thanks, bye!")
+               exit(0)
+#########################MOSTRAR DATOS ADQUIRIDOS POR EL SENSOR ##########################
+            
+            try:
+               print("Welcome to example of reading a remote TMP36 sensor!")
+               device.open() # Open the device class
+               # Setup the remote device
+               get_remote_device()
+               # Register a listener to handle the samples received by the local device.
+               device.add_io_sample_received_callback(io_sample_callback)
+               while True:
+                   pass
+            except KeyboardInterrupt:
+               if device is not None and device.is_open():
+                  device.close()      
+           
 def main():
     import sys
     print("inicia")
